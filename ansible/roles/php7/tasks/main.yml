@@ -1,0 +1,72 @@
+- name: Install Packages Needed To Compile PHP 7
+  apt: pkg={{ item }} state=latest
+  with_items:
+    - git
+    - autoconf 
+    - bison 
+    - libxml2-dev 
+    - libbz2-dev 
+    - libmcrypt-dev 
+    - libcurl4-openssl-dev 
+    - libltdl-dev 
+    - libpspell-dev
+    - libreadline6
+    - libreadline6-dev
+    - libfcgi-dev
+    - libfcgi0ldbl
+    - libjpeg62-turbo-dbg
+    - libssl-dev
+    - libc-client2007e
+    - libc-client2007e-dev
+    - libjpeg-dev
+    - libpng12-dev
+    - libfreetype6-dev
+    - libkrb5-dev
+    - libpq-dev
+    - libxml2-dev
+    - libxslt1-dev
+    - pkg-config
+
+- name: Clone PHP7
+  sudo: false
+  git: repo=https://git.php.net/repository/php-src.git dest=/home/vagrant/php-src
+
+- name: Create a few directories
+  file: path={{ item }} recurse=true state=directory
+  with_items:
+    - /etc/php7/conf.d
+    - /etc/php7/cli/conf.d
+    - /etc/php7/fpm/conf.d
+    - /usr/local/php7
+
+- name: Run buildconf
+  sudo: false
+  shell: ./buildconf
+  args:
+    chdir: /home/vagrant/php-src 
+
+- name: Configure the build.
+  sudo: false
+  shell: ./configure {{ php7_configure_string }} 
+  args:
+    chdir: /home/vagrant/php-src
+
+- name: Configure the cli build.
+  sudo: false
+  shell: ./configure {{ php7_cli_configure_string }} 
+  args:
+    chdir: /home/vagrant/php-src
+
+- name: Build PHP7
+  sudo: false
+  shell: make
+  args:
+    chdir: /home/vagrant/php-src
+
+- name: Replace https for http (pear server issue)
+  replace: dest=/home/vagrant/php-src/Makefile regexp='https\:\/\/pear.php.net/' replace='http://pear.php.net/' backup=yes
+
+- name: Install PHP7
+  shell: make install
+  args:
+    chdir: /home/vagrant/php-src
